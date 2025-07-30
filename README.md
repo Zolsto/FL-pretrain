@@ -1,5 +1,7 @@
-Questa repository contiene il codice e le risorse necessarie per il pre-training del modello server che verrà successivamente impiegato in un'architettura di Federated Learning.
+Server Pre-training for Federated Learning
 
-L'obiettivo di questo pre-training è stabilire una base solida per il modello globale prima che inizi il processo iterativo di apprendimento federato. In questo modo, il server è già dotato di una conoscenza iniziale rilevante, il che può contribuire a migliorare la convergenza e le prestazioni complessive del sistema di Federated Learning.
+This repository holds the code and resources required for pre-training the server model that will later be used in a Federated Learning architecture.
 
-Qui troverai gli script per la preparazione dei dati e l'addestramento del modello server.
+The goal of this pre-training is to establish a solid foundation for the global model before the iterative federated learning process begins. This ensures the server already possesses relevant initial knowledge, which can help improve the overall convergence and performance of the Federated Learning system.
+
+Here you'll find the scripts for data preparation and server model training.
