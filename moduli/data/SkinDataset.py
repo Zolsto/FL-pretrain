@@ -32,7 +32,7 @@ class SkinDataset(Dataset):
         image = image.convert("RGB")
         if self.augm!="no":
             if self.augm=="selective":
-                if self.class_to_name[label] in self.low_samples_classes:
+                if self.class_to_idx[label] in self.low_samples_classes:
                     image = self.transform(image)
                 else:
                     image = self.base_tr(image)
