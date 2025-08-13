@@ -5,7 +5,7 @@ import numpy as np
 import torchvision.transforms as T
 
 class SkinDataset(Dataset):
-    def __init__(self, paths: list, labels: list, transform, augm_type: str="all"):
+    def __init__(self, paths: list, labels: list, transform, augm_type: str="no"):
         self.image_paths = paths
         self.labels = labels
         self.augm = augm_type.lower()

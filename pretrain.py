@@ -34,9 +34,9 @@ transform = [transforms.RandomRotation(degrees=90),
 
 train_set = SkinDataset(paths=train_path, labels=train_label, transform=transform, augm_type="all")
 print(f"Training images: {len(train_path)}")
-val_set = SkinDataset(paths=val_path, labels=val_label, transform=transform, augm_type="all")
+val_set = SkinDataset(paths=val_path, labels=val_label)
 print(f"Validation images: {len(val_path)}")
-test_set = SkinDataset(paths=test_path, labels=test_label, transform=transform, augm_type="all")
+test_set = SkinDataset(paths=test_path, labels=test_label)
 print(f"Test images: {len(test_path)}")
 
 # DataLoader for each set
