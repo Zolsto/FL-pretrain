@@ -9,10 +9,13 @@ class SkinDataset(Dataset):
         self.image_paths = paths
         self.labels = labels
         self.augm = augm_type.lower()
+        self.base_tr = T.Compose([T.CenterCrop(224), T.ToTensor()])
         if self.augm=="selective":
             self.low_samples_classes = ["actinic keratosis", "seborrheic keratosis", "squamous cell carcinoma"]
-        self.base_tr = T.Compose([T.CenterCrop(224), T.ToTensor()])
-        self.transform = T.Compose(transform+self.base_tr.transforms)
+        
+        if augm_type!="no":
+            self.transform = T.Compose(transform+self.base_tr.transforms)
+
         self.targets = self.labels
         self.classes = ["actinic keratosis", "basal cell carcinoma", "melanoma", "nevus", "seborrheic keratosis", "squamous cell carcinoma"]
         self.class_to_idx = {
@@ -30,14 +33,15 @@ class SkinDataset(Dataset):
         label = self.labels[idx]
         image = Image.open(self.image_paths[idx])
         image = image.convert("RGB")
-        if self.augm!="no":
-            if self.augm=="selective":
-                if self.class_to_idx[label] in self.low_samples_classes:
-                    image = self.transform(image)
-                else:
-                    image = self.base_tr(image)
-            else:
+        if self.augm=="no":
+            image = self.base_tr(image)
+        elif self.augm=="selective" or self.augm=="sel":
+            if self.class_to_idx[label] in self.low_samples_classes:
                 image = self.transform(image)
-            
+            else:
+                image = self.base_tr(image)
+        else:
+            image = self.transform(image)
+           
         label = torch.tensor(label, dtype=torch.long)
         return image, label
