@@ -5,16 +5,24 @@ import numpy as np
 import torchvision.transforms as T
 
 class SkinDataset(Dataset):
-    def __init__(self, paths: list, labels: list, transform, augm_type: str="no"):
+    def __init__(self,
+        paths: list,
+        labels: list,
+        transform: T.Compose,
+        augm: bool=False,
+        selec_augm: bool=False
+        ):
+
         self.image_paths = paths
         self.labels = labels
-        self.augm = augm_type.lower()
-        self.base_tr = T.Compose([T.CenterCrop(224), T.ToTensor()])
-        if self.augm=="selective":
+        self.augm = augm
+        self.selec_augm = selec_augm
+        # Last three transforms (CenterCrop(224), ToTensor and Normalize) are always needed
+        self.base_tr = T.Compose(transform.transforms[-3:])
+        self.transform = transform
+
+        if self.selec_augm:
             self.low_samples_classes = ["actinic keratosis", "seborrheic keratosis", "squamous cell carcinoma"]
-        
-        if augm_type!="no":
-            self.transform = T.Compose(transform+self.base_tr.transforms)
 
         self.targets = self.labels
         self.classes = ["actinic keratosis", "basal cell carcinoma", "melanoma", "nevus", "seborrheic keratosis", "squamous cell carcinoma"]
@@ -33,9 +41,9 @@ class SkinDataset(Dataset):
         label = self.labels[idx]
         image = Image.open(self.image_paths[idx])
         image = image.convert("RGB")
-        if self.augm=="no":
+        if self.augm==False:
             image = self.base_tr(image)
-        elif self.augm=="selective" or self.augm=="sel":
+        elif self.selec_augm:
             if self.class_to_idx[label] in self.low_samples_classes:
                 image = self.transform(image)
             else:

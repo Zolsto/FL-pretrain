@@ -1,4 +1,5 @@
 from moduli.data import SkinDataset
+from moduli.data.utils import normalize_dataset
 from moduli.learning import trainer, tester
 from moduli.NNmodel import EffNetB0
 from torchvision import transforms, datasets
@@ -11,6 +12,8 @@ import torch.optim as optim
 import numpy as np
 from sklearn.metrics import classification_report, confusion_matrix
 
+seed=42
+np.random.seed(seed)
 # Import images as dataset
 data_folder = "../../data-noSBD-noDouble"
 data = datasets.ImageFolder(root=data_folder)
@@ -20,24 +23,44 @@ print(f"Total images: {len(all_path)}")
 
 # Split the images in 80% training, 10% validation and 10% testing
 train_size = 0.8
-train_path, temp_path, train_label, temp_label = train_test_split(all_path, all_label, train_size=train_size, stratify=all_label, random_state=26)
+train_path, temp_path, train_label, temp_label = train_test_split(all_path, all_label, train_size=train_size, stratify=all_label, random_state=seed)
 
 val_size = 0.5
-val_path, test_path, val_label, test_label = train_test_split(temp_path, temp_label, train_size=val_size, stratify=temp_label, random_state=26)
+val_path, test_path, val_label, test_label = train_test_split(temp_path, temp_label, train_size=val_size, stratify=temp_label, random_state=seed)
 
-#Create train, validation and test dataset with transform for data augmentation
-transform = [transforms.RandomRotation(degrees=90),
+# Compute mean and std of the dataset
+mean = None
+std = None
+mean, std = normalize_dataset(train_path)
+if mean is None and data_folder[6:10]=="data":
+    mean = [0.6880543, 0.5523759, 0.52571917]
+    std = [0.18954661, 0.18673806, 0.19805697]
+    print("Using mean and std from original dataset (for seed 42)")
+elif mean is None and data_folder[6:10]=="sint":
+    mean = [0.6666211, 0.5328093, 0.5072889]
+    std = [0.21086366, 0.19616452, 0.20302014]
+    print("Using mean and std from synthetic dataset (for seed 42)")
+elif mean is None:
+    print("Unknown dataset.")
+    raise Exception("Dataset unknown. Set mean and std manually.")
+print(f"Dataset mean: {mean}\nDataset std: {std}")
+
+#Create train, validation and test dataset with transforms for data augmentation
+transform = transforms.Compose([transforms.RandomRotation(degrees=90),
     transforms.RandomHorizontalFlip(),
-    transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.05, hue=0.05),
-    transforms.RandomVerticalFlip()
-]
+    transforms.RandomVerticalFlip(),
+    transforms.CenterCrop(224),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=mean, std=std)
+])
 
-train_set = SkinDataset(paths=train_path, labels=train_label, transform=transform, augm_type="selective")
+train_set = SkinDataset(paths=train_path, labels=train_label, transform=transform, augm=True, selec_augm=False)
 print(f"Training images: {len(train_path)}")
-val_set = SkinDataset(paths=val_path, labels=val_label, transform=transform)
+val_set = SkinDataset(paths=val_path, labels=val_label, transform=transform, augm=False)
 print(f"Validation images: {len(val_path)}")
-test_set = SkinDataset(paths=test_path, labels=test_label, transform=transform)
+test_set = SkinDataset(paths=test_path, labels=test_label, transform=transform, augm=False)
 print(f"Test images: {len(test_path)}")
+#raise Exception("Stopped")
 
 # DataLoader for each set
 size_batch = 128 if torch.cuda.is_available() else 16
@@ -49,7 +72,7 @@ test_loader = DataLoader(test_set, batch_size=size_batch, shuffle=False)
 # Initialize server model and variables for training process
 n_classes = 6
 fed_server = EffNetB0(n_classes=n_classes, weights=EfficientNet_B0_Weights.DEFAULT)
-nome = "nosint-sel"
+nome = "nosint-all"
 model_dir = f"modelli/{nome}"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using device: {device}")
@@ -58,12 +81,12 @@ print()
 
 # What to perform in the script (in order)
 finetune_train = True
-opt_fine = optim.Adam(fed_server.parameters(), lr=0.01)
+opt_fine = optim.AdamW(fed_server.parameters(), lr=0.005)
 
 test1 = True
 
 training = True
-opt = optim.Adam(fed_server.parameters(), lr=0.0005)
+opt = optim.AdamW(fed_server.parameters(), lr=0.0001)
 
 test2 = True
 
@@ -79,8 +102,8 @@ if finetune_train:
         opt=opt_fine,
         loss_fn=nn.CrossEntropyLoss(),
         device=device,
-        epochs=15,
-        early_stop=4,
+        epochs=10,
+        early_stop=5,
         name=nome,
         fine_tune=True
     )
@@ -96,6 +119,7 @@ else:
 test_preds = []
 test_true = []
 if test1:
+    fed_server.load_state_dict(torch.load(f"{model_dir}/best_{nome}.pt", map_location=torch.device(device)))
     test_preds, test_true = tester.test_this_model(
         model=fed_server,
         test_loader=test_loader,
@@ -110,6 +134,7 @@ else:
     
 # Training the whole model or loading previous model based on its name
 if training:
+    fed_server.load_state_dict(torch.load(f"{model_dir}/best_{nome}.pt", map_location=torch.device(device)))
     trainer.train_this_model(
         model=fed_server,
         train_loader=train_loader,
@@ -117,8 +142,8 @@ if training:
         opt=opt,
         loss_fn=nn.CrossEntropyLoss(),
         device=device,
-        epochs=15,
-        early_stop=4,
+        epochs=30,
+        early_stop=5,
         name=nome,
         fine_tune=False
     )
@@ -134,6 +159,7 @@ else:
 test_preds = []
 test_true = []
 if test2:
+    fed_server.load_state_dict(torch.load(f"{model_dir}/best_{nome}.pt", map_location=torch.device(device)))
     test_preds, test_true = tester.test_this_model(
         model=fed_server,
         test_loader=test_loader,
