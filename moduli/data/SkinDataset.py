@@ -10,8 +10,7 @@ class SkinDataset(Dataset):
         labels: list,
         transform: T.Compose,
         augm: bool=False,
-        selec_augm: bool=False
-        ):
+        selec_augm: bool=False):
 
         self.image_paths = paths
         self.labels = labels
@@ -20,7 +19,6 @@ class SkinDataset(Dataset):
         # Last three transforms (CenterCrop(224), ToTensor and Normalize) are always needed
         self.base_tr = T.Compose(transform.transforms[-3:])
         self.transform = transform
-
         if self.selec_augm:
             self.low_samples_classes = ["actinic keratosis", "seborrheic keratosis", "squamous cell carcinoma"]
 
