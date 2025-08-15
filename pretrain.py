@@ -31,19 +31,18 @@ val_path, test_path, val_label, test_label = train_test_split(temp_path, temp_la
 # Compute mean and std of the dataset
 mean = None
 std = None
-mean, std = normalize_dataset(train_path)
+mean, std = normalize_dataset(train_path, crop_size=224)
 if mean is None and data_folder[6:10]=="data":
-    mean = [0.6880543, 0.5523759, 0.52571917]
-    std = [0.18954661, 0.18673806, 0.19805697]
+    mean = [0.60045856, 0.44390684, 0.40402648]
+    std = [0.22650158, 0.2031579, 0.21181032]
     print("Using mean and std from original dataset (for seed 42)")
 elif mean is None and data_folder[6:10]=="sint":
-    mean = [0.6666211, 0.5328093, 0.5072889]
-    std = [0.21086366, 0.19616452, 0.20302014]
+    mean = [0.6147956, 0.4593298, 0.4273037]
+    std = [0.228707, 0.20079376, 0.20833343]
     print("Using mean and std from synthetic dataset (for seed 42)")
 elif mean is None:
     print("Unknown dataset.")
     raise Exception("Dataset unknown. Set mean and std manually.")
-print(f"Dataset mean: {mean}\nDataset std: {std}")
 
 #Create train, validation and test dataset with transforms for data augmentation
 transform = transforms.Compose([transforms.RandomRotation(degrees=90),
@@ -54,7 +53,7 @@ transform = transforms.Compose([transforms.RandomRotation(degrees=90),
     transforms.Normalize(mean=mean, std=std)
 ])
 
-train_set = SkinDataset(paths=train_path, labels=train_label, transform=transform, augm=True, selec_augm=False)
+train_set = SkinDataset(paths=train_path, labels=train_label, transform=transform, augm=True, selec_augm=True)
 print(f"Training images: {len(train_path)}")
 val_set = SkinDataset(paths=val_path, labels=val_label, transform=transform, augm=False)
 print(f"Validation images: {len(val_path)}")
@@ -72,7 +71,7 @@ test_loader = DataLoader(test_set, batch_size=size_batch, shuffle=False)
 # Initialize server model and variables for training process
 n_classes = 6
 fed_server = EffNetB0(n_classes=n_classes, weights=EfficientNet_B0_Weights.DEFAULT)
-nome = "nosint-all"
+nome = "nosint-sel"
 model_dir = f"modelli/{nome}"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using device: {device}")

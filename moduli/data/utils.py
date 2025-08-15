@@ -1,8 +1,9 @@
 import numpy as np
 from PIL import Image
+from torchvision import transforms as T
 from typing import List, Tuple
 
-def normalize_dataset(image_paths: List[str]) -> Tuple[List[float], List[float]]:
+def normalize_dataset(image_paths: List[str], crop_size: int=224) -> Tuple[List[float], List[float]]:
     """
     Compute mean and std for a set of images.
     
@@ -15,12 +16,18 @@ def normalize_dataset(image_paths: List[str]) -> Tuple[List[float], List[float]]
     sum_r, sum_g, sum_b = 0, 0, 0
     sq_sum_r, sq_sum_g, sq_sum_b = 0, 0, 0
     num_pixels = 0
+    cropping = T.Compose([
+        T.CenterCrop(crop_size)
+    ])
     for path in image_paths:
         image = Image.open(path).convert("RGB")
+        if crop_size>0:
+            image = cropping(image)
+            
         image_np = np.array(image, dtype=np.float32) / 255
         h, w, _ = image_np.shape
         num_pixels += h * w
-    
+
         sum_r += np.sum(image_np[:, :, 0])
         sum_g += np.sum(image_np[:, :, 1])
         sum_b += np.sum(image_np[:, :, 2])
