@@ -1,5 +1,6 @@
 modelli/
 output/
+.ipynb_checkpoints/
 /*.txt
 *.slurm
 __pycache__/

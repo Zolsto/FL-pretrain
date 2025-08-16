@@ -15,7 +15,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 seed=42
 np.random.seed(seed)
 # Import images as dataset
-data_folder = "../../data-noSBD-noDouble"
+data_folder = "../../sint-data-noSBD-noDouble"
 data = datasets.ImageFolder(root=data_folder)
 all_path = [s[0] for s in data.samples]
 all_label = [s[1] for s in data.samples]
@@ -53,7 +53,7 @@ transform = transforms.Compose([transforms.RandomRotation(degrees=90),
     transforms.Normalize(mean=mean, std=std)
 ])
 
-train_set = SkinDataset(paths=train_path, labels=train_label, transform=transform, augm=True, selec_augm=True)
+train_set = SkinDataset(paths=train_path, labels=train_label, transform=transform, augm=True, selec_augm=False)
 print(f"Training images: {len(train_path)}")
 val_set = SkinDataset(paths=val_path, labels=val_label, transform=transform, augm=False)
 print(f"Validation images: {len(val_path)}")
@@ -71,7 +71,7 @@ test_loader = DataLoader(test_set, batch_size=size_batch, shuffle=False)
 # Initialize server model and variables for training process
 n_classes = 6
 fed_server = EffNetB0(n_classes=n_classes, weights=EfficientNet_B0_Weights.DEFAULT)
-nome = "nosint-sel"
+nome = "presint-more"
 model_dir = f"modelli/{nome}"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using device: {device}")
@@ -101,7 +101,7 @@ if finetune_train:
         opt=opt_fine,
         loss_fn=nn.CrossEntropyLoss(),
         device=device,
-        epochs=10,
+        epochs=15,
         early_stop=5,
         name=nome,
         fine_tune=True
@@ -141,7 +141,7 @@ if training:
         opt=opt,
         loss_fn=nn.CrossEntropyLoss(),
         device=device,
-        epochs=30,
+        epochs=50,
         early_stop=5,
         name=nome,
         fine_tune=False
