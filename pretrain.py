@@ -31,7 +31,7 @@ val_path, test_path, val_label, test_label = train_test_split(temp_path, temp_la
 # Compute mean and std of the dataset
 mean = None
 std = None
-mean, std = normalize_dataset(train_path, crop_size=224)
+#mean, std = normalize_dataset(train_path, crop_size=224)
 if mean is None and data_folder[6:10]=="data":
     mean = [0.60045856, 0.44390684, 0.40402648]
     std = [0.22650158, 0.2031579, 0.21181032]
@@ -49,8 +49,8 @@ transform = transforms.Compose([transforms.RandomRotation(degrees=90),
     transforms.RandomHorizontalFlip(),
     transforms.RandomVerticalFlip(),
     transforms.CenterCrop(224),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=mean, std=std)
+    transforms.ToTensor()
+#    transforms.Normalize(mean=mean, std=std)
 ])
 
 train_set = SkinDataset(paths=train_path, labels=train_label, transform=transform, augm=True, selec_augm=False)
@@ -71,7 +71,7 @@ test_loader = DataLoader(test_set, batch_size=size_batch, shuffle=False)
 # Initialize server model and variables for training process
 n_classes = 6
 fed_server = EffNetB0(n_classes=n_classes, weights=EfficientNet_B0_Weights.DEFAULT)
-nome = "presint-more"
+nome = "presint-nonorm"
 model_dir = f"modelli/{nome}"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using device: {device}")
@@ -101,7 +101,7 @@ if finetune_train:
         opt=opt_fine,
         loss_fn=nn.CrossEntropyLoss(),
         device=device,
-        epochs=15,
+        epochs=10,
         early_stop=5,
         name=nome,
         fine_tune=True
@@ -141,7 +141,7 @@ if training:
         opt=opt,
         loss_fn=nn.CrossEntropyLoss(),
         device=device,
-        epochs=50,
+        epochs=30,
         early_stop=5,
         name=nome,
         fine_tune=False
