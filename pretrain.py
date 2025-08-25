@@ -70,8 +70,8 @@ test_loader = DataLoader(test_set, batch_size=size_batch, shuffle=False)
 
 # Initialize server model and variables for training process
 n_classes = 6
-fed_server = EffNetB0(n_classes=n_classes, weights=EfficientNet_B0_Weights.DEFAULT)
-nome = "presint-nonorm"
+fed_server = EffNetB0(n_classes=n_classes, weights=None)
+nome = "sint-nonorm"
 model_dir = f"modelli/{nome}"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using device: {device}")
@@ -79,13 +79,13 @@ fed_server = fed_server.to(device)
 print()
 
 # What to perform in the script (in order)
-finetune_train = True
+finetune_train = False
 opt_fine = optim.AdamW(fed_server.parameters(), lr=0.005)
 
-test1 = True
+test1 = False
 
 training = True
-opt = optim.AdamW(fed_server.parameters(), lr=0.0001)
+opt = optim.AdamW(fed_server.parameters(), lr=0.0003)
 
 test2 = True
 
@@ -133,7 +133,9 @@ else:
     
 # Training the whole model or loading previous model based on its name
 if training:
-    fed_server.load_state_dict(torch.load(f"{model_dir}/best_{nome}.pt", map_location=torch.device(device)))
+    if finetune_train:
+        fed_server.load_state_dict(torch.load(f"{model_dir}/best_{nome}.pt", map_location=torch.device(device)))
+        
     trainer.train_this_model(
         model=fed_server,
         train_loader=train_loader,
@@ -141,7 +143,7 @@ if training:
         opt=opt,
         loss_fn=nn.CrossEntropyLoss(),
         device=device,
-        epochs=30,
+        epochs=50,
         early_stop=5,
         name=nome,
         fine_tune=False
